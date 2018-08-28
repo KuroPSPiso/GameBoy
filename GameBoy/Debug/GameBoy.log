@@ -1,0 +1,13 @@
+﻿  CPU.cpp
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.h(50): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.h(51): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.h(52): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.h(53): warning C4554: '<<': check operator precedence for possible error; use parentheses to clarify precedence
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(355): warning C4800: 'BOOL': forcing value to bool 'true' or 'false' (performance warning)
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(470): warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(602): warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(895): warning C4244: 'argument': conversion from 'uint16' to 'uint8', possible loss of data
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(946): warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(335): warning C4700: uninitialized local variable 'pc' used
+  GameBoy.vcxproj -> C:\Users\AdminUser.UserAdmin-PC\documents\visual studio 2015\Projects\GameBoy\Debug\GameBoy.exe
+  GameBoy.vcxproj -> C:\Users\AdminUser.UserAdmin-PC\documents\visual studio 2015\Projects\GameBoy\Debug\GameBoy.pdb (Full PDB)
