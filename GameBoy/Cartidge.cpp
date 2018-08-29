@@ -8,11 +8,17 @@ Cartidge::Cartidge(char* path)
 
 void Cartidge::Load(char * path)
 {
-	ifstream file(path);
+	ifstream file(path, ios::binary);
 	if (!file.fail())
 	{
 		char* tempData = new char[0xFFFF];
 		_ROM = new uint8[0xFFFF];
+		uint16 byteCounter = 0x0000;
+		/*while (file.eof() == FALSE)
+		{
+			tempData[byteCounter] = file.get();
+			byteCounter++;
+		}*/
 		file.read(tempData, 0xFFFF);
 
 		//Loop header

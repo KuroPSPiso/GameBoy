@@ -47,10 +47,10 @@ class CPU
 		uint16 DE = (uint16)(D << 8 & E);
 		uint16 HL = (uint16)(H << 8 & L);
 		*/
-		uint16 AF() { return A << 8 + F; }
-		uint16 BC() { return B << 8 + C; }
-		uint16 DE() { return D << 8 + E; }
-		uint16 HL() { return H << 8 + L; }
+		uint16 AF() { return ((uint16)(A << 8) + F); }
+		uint16 BC() { return ((uint16)(B << 8) + C); }
+		uint16 DE() { return ((uint16)(D << 8) + E); }
+		uint16 HL() { return ((uint16)(H << 8) + L); }
 		void AF(uint16 newValue) { A = newValue >> 8; F = newValue & 0xFF; }
 		void BC(uint16 newValue) { B = newValue >> 8; C = newValue & 0xFF; }
 		void DE(uint16 newValue) { D = newValue >> 8; E = newValue & 0xFF; }
@@ -90,7 +90,7 @@ private:
 	uint8 POP8_SP();
 	uint16 POP16_SP();
 	void PUSH8_SP(uint8 value);
-	void PUSH16_SP(uint8 value);
+	void PUSH16_SP(uint16 value);
 
 
 	//flag un-/sets
@@ -502,6 +502,17 @@ private:
 	void CB_BIT_7_L();	//0XCB7D
 	void CB_BIT_7_A();	//0XCB7F
 
+	void CB_BIT_0_MM();	//0xCB46
+	void CB_BIT_1_MM();	//0xCB4E
+	void CB_BIT_2_MM();	//0xCB56
+	void CB_BIT_3_MM();	//0xCB5E
+	void CB_BIT_4_MM();	//0xCB66
+	void CB_BIT_5_MM();	//0xCB6E
+	void CB_BIT_6_MM();	//0xCB76
+	void CB_BIT_7_MM();	//0xCB7E
+
+	void CB_BIT(uint8 bit, uint8 data);
+
 	void CB_RES_0_B();	//0XCB80
 	void CB_RES_0_C();	//0XCB81
 	void CB_RES_0_D();	//0XCB82
@@ -559,6 +570,17 @@ private:
 	void CB_RES_7_L();	//0XCBBD
 	void CB_RES_7_A();	//0XCBBF
 
+	void CB_RES_0_MM();	//0xCB86
+	void CB_RES_1_MM();	//0xCB8E
+	void CB_RES_2_MM();	//0xCB96
+	void CB_RES_3_MM();	//0xCB9E
+	void CB_RES_4_MM();	//0xCBA6
+	void CB_RES_5_MM();	//0xCBAE
+	void CB_RES_6_MM();	//0xCBB6
+	void CB_RES_7_MM();	//0xCBBE
+
+	void CB_RES(uint8 bit, uint8 data);
+
 	void CB_SET_0_B();	//0XCBC0
 	void CB_SET_0_C();	//0XCBC1
 	void CB_SET_0_D();	//0XCBC2
@@ -615,6 +637,17 @@ private:
 	void CB_SET_7_H();	//0XCBFC
 	void CB_SET_7_L();	//0XCBFD
 	void CB_SET_7_A();	//0XCBFF
+
+	void CB_SET_0_MM();	//0xCBC6
+	void CB_SET_1_MM();	//0xCBCE
+	void CB_SET_2_MM();	//0xCBD6
+	void CB_SET_3_MM();	//0xCBDE
+	void CB_SET_4_MM();	//0xCBE6
+	void CB_SET_5_MM();	//0xCBEE
+	void CB_SET_6_MM();	//0xCBF6
+	void CB_SET_7_MM();	//0xCBFE
+
+	void CB_SET(uint8 bit, uint8 data);
 
 	void CB_RLC8(uint8& registerRef);		//0xCB00-0xCB07 (except '0xCB06')
 

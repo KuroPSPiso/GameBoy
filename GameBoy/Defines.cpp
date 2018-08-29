@@ -8,7 +8,7 @@ void Set_Bit(uint8 &value, uint8 bitNo, BOOL status)
 	}
 	else
 	{
-		value &= (1 << bitNo);
+		value &= ~(1 << bitNo);
 	}
 }
 
