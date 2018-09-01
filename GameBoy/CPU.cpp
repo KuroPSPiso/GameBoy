@@ -1,16 +1,23 @@
 #include "CPU.h"
 
+
+#define From11Borrow12 0x100
+#define From3Borrow4 0x10
+#define HCarryFrom(val, change, bit) (((val & (bit - 0x01)) + (change & (bit - 0x01))) & bit) == bit
+#define HCarryBorrow(val, change, bit) (((val & (bit - 0x01)) - (change & (bit - 0x01))) & bit) == bit
 #define math8(N, C, d1, d2, f, hCarried, cCarried) \
 if(N == 0) \
 {\
 	cCarried = (((uint16)d2 + d1 + C) >> 8) & 0x01;\
-	hCarried = (((uint16) (d2 & 0x0f) + (d1 & 0x0f) + (C & 0x0f)) >> 4) & 0x01;\
+	if(d1 + C > 0x0f) { hCarried = true; }\
+	else { hCarried = HCarryFrom(d2, d1 + C, From3Borrow4); } \
 	d2 = d2 + d1 + C;\
 }\
 else \
 {\
 	cCarried = (((uint16) ((0xff - d2) & 0x0f) + ((0xff - d1) & 0x0f) + ((0xff - C) & 0x0f)) & 0xf0 >> 4 & 0x01);\
-	hCarried = ((uint16) (d2 & 0x0F) < ((uint16) (d1 & 0x0f) + (C & 0x0f))); \
+	if(d1 + C > 0x0f) { hCarried = true; }\
+	else { hCarried = HCarryBorrow(d2, d1 + C, From11Borrow12); } \
 	d2 = d2 - d1 - C; \
 }\
 Set_Bit(f, 6, (d2 == 0)); \
@@ -34,20 +41,6 @@ CPU::~CPU()
 
 void CPU::Reset()
 {
-	_clock.Cycle(0, 0);
-	_registers.tClock.Cycle(0, 0);
-
-	_registers.A = 0;
-	_registers.F = 0;
-	_registers.B = 0;
-	_registers.C = 0;
-	_registers.D = 0;
-	_registers.E = 0;
-	_registers.H = 0;
-	_registers.L = 0;
-	_registers.SP = 0xCFFF;
-	_registers.PC = 0x0100;
-
 	for (uint8 i = 0; i < 0xFF; i++)
 	{
 		_opcodeTable[i] = &CPU::NOP;
@@ -848,22 +841,90 @@ void CPU::Reset()
 	_cbOpcodeTable[0xFD] = &CPU::CB_SET_7_L;	//0XCBFD
 	_cbOpcodeTable[0xFE] = &CPU::CB_SET_7_MM;	//0XCBFE
 	_cbOpcodeTable[0xFF] = &CPU::CB_SET_7_A;	//0XCBFF
+
+	//Startup sequence (GB)
+	_clock.Cycle(0, 0);
+	_registers.tClock.Cycle(0, 0);
+	_hasSetPC = FALSE;
+
+	_registers.A = 0;
+	_registers.F = 0;
+	_registers.B = 0;
+	_registers.C = 0;
+	_registers.D = 0;
+	_registers.E = 0;
+	_registers.H = 0;
+	_registers.L = 0;
+	_registers.SP = 0;
+	_registers.PC = 0x0000;
+
+	/*_registers.AF	(0x01);
+	_registers.F	= 0xB0;
+	_registers.BC	(0x0013);
+	_registers.DE	(0x00D8);
+	_registers.HL	(0x014D);
+	_registers.SP	= 0xFFFE;
+	_registers.PC = 0x0100;
+	Write8(TIMA, 0x00);
+	Write8(TMA, 0x00);
+	Write8(TAC, 0x00);
+	Write8(NR10, 0x80);
+	Write8(NR11, 0xBF);
+	Write8(NR12, 0xF3);
+	Write8(NR14, 0xBF);
+	Write8(NR21, 0x3F);
+	Write8(NR22, 0x00);
+	Write8(NR24, 0xBF);
+	Write8(NR30, 0x7F);
+	Write8(NR31, 0xFF);
+	Write8(NR32, 0x9F);
+	Write8(NR33, 0xBF);
+	Write8(NR41, 0xFF);
+	Write8(NR42, 0x00);
+	Write8(NR43, 0x00);
+	Write8(NR44, 0xBF);
+	Write8(NR50, 0x77);
+	Write8(NR51, 0xF3);
+	Write8(NR52, 0xF1); //Set to 0xF0 for SGB
+	Write8(LCDC, 0x91);
+	Write8(SCY, 0x00);
+	Write8(SCX, 0x00);
+	Write8(LYC, 0x00);
+	Write8(BGP, 0xFC);
+	Write8(OBP0, 0xFF);
+	Write8(OBP1, 0xFF);
+	Write8(WY, 0x00);
+	Write8(WX, 0x00);
+	Write8(IE, 0x00);*/
+}
+
+uint16 CPU::GetCycles()
+{
+	return _clock.cpu_cycles;
 }
 
 bool CPU::Run()
 {
+	//check if in BIOS
+	if (_registers.PC == 0x100)
+	{
+		_mmu->BIOSLoaded(TRUE);
+	}
+
 	//(expected sequence)
 	BOOL runningState = TRUE;
 	uint8 val = Read8(_registers.PC);
 	uint16 pc = _registers.PC;
+	printf("%s [0x%X] (0x%X)\n", opcodeNames[val], pc, val);
 	_registers.PC += 0x0001;
-	printf(opcodeNames[val]);
 	if (val == 0xCB)
 	{
 		//cb
-		uint8 pc = Read8(pc);
+		uint8 pc = Read8(_registers.PC);
 		_registers.PC += 0x0001;
 		(this->*(_cbOpcodeTable[pc]))();
+		_registers.tClock.byte_call_cycles + 1;
+		_registers.tClock.cpu_cycles + 4;
 	}
 	else
 	{
@@ -875,8 +936,15 @@ bool CPU::Run()
 	{
 		_registers.PC = pc;
 	}
+	else
+	{
+		//_registers.PC += _registers.tClock.byte_call_cycles - 1;
+	}
 
 	//reset
+	_clock.byte_call_cycles += _registers.tClock.byte_call_cycles;
+	_clock.cpu_cycles		+= _registers.tClock.cpu_cycles;
+
 	_registers.tClock.Cycle(0, 0);
 	_hasSetPC = FALSE;
 
@@ -906,18 +974,18 @@ void CPU::Write16(uint16 address, uint16 value)
 
 uint8 CPU::POP8_SP()
 {
-	uint8 result = Read8(_registers.SP - 0x0001);
-	Write8(_registers.SP - 0x0001, 0x0000);
-	_registers.SP -= 0x0001;
+	uint8 result = Read8(_registers.SP + 0x0001);
+	Write8(_registers.SP + 0x0001, 0x0000);
+	_registers.SP += 0x0001;
 
 	return result;
 }
 
 uint16 CPU::POP16_SP()
 {
-	uint8 result = Read16(_registers.SP - 0x0001);
-	Write16(_registers.SP - 0x0002, 0x0000);
-	_registers.SP -= 0x0002;
+	uint16 result = Read16(_registers.SP + 0x0001);
+	Write16(_registers.SP + 0x0001, 0x0000);
+	_registers.SP += 0x0002;
 
 	return result;
 }
@@ -925,13 +993,13 @@ uint16 CPU::POP16_SP()
 void CPU::PUSH8_SP(uint8 value)
 {
 	Write16(_registers.SP, value);
-	_registers.SP += 0x0002;
+	_registers.SP -= 0x0001;
 }
 
 void CPU::PUSH16_SP(uint16 value)
 {
-	Write16(_registers.SP, value);
-	_registers.SP += 0x0002;
+	Write16(_registers.SP - 0x0001, value);
+	_registers.SP -= 0x0002;
 }
 
 void CPU::Set_Z(BOOL value)
@@ -1019,16 +1087,12 @@ void CPU::ADD_HL_BC()
 {
 	uint32 oldHL = _registers.HL();
 	uint32 oldBC = _registers.BC();
-	BOOL hCarried = FALSE;
 	BOOL cCarried = FALSE;
+	BOOL hCarried = HCarryFrom(oldHL, oldBC, From11Borrow12);
 
 	if (oldHL + oldBC > 0xFFFF)
 	{
 		cCarried = TRUE;
-	}
-	if (oldHL & 0x00FF + oldBC > 0x0F00)
-	{
-		hCarried = TRUE;
 	}
 
 	_registers.HL(_registers.HL() + _registers.BC());
@@ -1087,6 +1151,8 @@ void CPU::RR_CA()
 void CPU::STOP()
 {
 	//TODO: HALT display/CPU
+	//TODO: WAIT FOR INPUT
+	while (input->HasInput() == FALSE);
 	_registers.tClock.Cycle(2, 4);
 }
 
@@ -1142,7 +1208,20 @@ void CPU::RL_A()
 
 void CPU::JR_R()
 {
-	_registers.PC += Read8(_registers.PC);
+	uint8 e = Read8(_registers.PC);
+	_registers.PC += 0x0001;
+	if (Get_Bit(e, 7) == TRUE)
+	{
+		//Make Negative;
+		e -= 0x80;
+		e = 0x80 - e;
+		_registers.PC -= e;
+	}
+	else
+	{
+		_registers.PC += e ;
+	}
+	
 	_hasSetPC = TRUE;
 	_registers.tClock.Cycle(2, 12);
 }
@@ -1151,16 +1230,12 @@ void CPU::ADD_HL_DE()
 {
 	uint32 oldHL = _registers.HL();
 	uint32 oldDE = _registers.DE();
-	BOOL hCarried = FALSE;
 	BOOL cCarried = FALSE;
+	BOOL hCarried = HCarryFrom(oldHL, oldDE, From11Borrow12);
 
 	if (oldHL + oldDE > 0xFFFF)
 	{
 		cCarried = TRUE;
-	}
-	if (oldHL & 0x00FF + oldDE > 0x0F00)
-	{
-		hCarried = TRUE;
 	}
 
 	_registers.HL(_registers.HL() + _registers.DE());
@@ -1217,9 +1292,11 @@ void CPU::JR_NZ_R()
 {
 	if (Get_Bit(_registers.F, 7) == FALSE)
 	{
-		_registers.PC += Read8(_registers.PC);
+		/*_registers.PC += Read8(_registers.PC);
+		_registers.PC &= 0xFF;
 		_hasSetPC = TRUE;
-		_registers.tClock.Cycle(2, 12);
+		_registers.tClock.Cycle(2, 12);*/
+		JR_R();
 	}
 	else
 	{
@@ -1332,9 +1409,11 @@ void CPU::JR_Z_R()
 {
 	if (Get_Bit(_registers.F, 7) == TRUE)
 	{
+		/*
 		_registers.PC += Read8(_registers.PC);
 		_hasSetPC = TRUE;
-		_registers.tClock.Cycle(2, 12);
+		_registers.tClock.Cycle(2, 12);*/
+		JR_R();
 	}
 	else
 	{
@@ -1418,9 +1497,10 @@ void CPU::JR_NC_R()
 {
 	if (Get_Bit(_registers.F, 4) == FALSE)
 	{
-		_registers.PC += Read8(_registers.PC);
+		/*_registers.PC += Read8(_registers.PC);
 		_hasSetPC = TRUE;
-		_registers.tClock.Cycle(2, 12);
+		_registers.tClock.Cycle(2, 12);*/
+		JR_R();
 	}
 	else
 	{
@@ -1449,9 +1529,12 @@ void CPU::INC_SP()
 
 void CPU::INC_MM()
 {
-	uint16 tempMM = Read8(_registers.HL());
+	uint8 tempMM = Read8(_registers.HL());
 	tempMM += 0x01;
 	Write8(_registers.HL(), tempMM);
+	Set_Z((_registers.HL() == 0));
+	Set_N(FALSE);
+	Set_H(HCarryFrom(tempMM - 0x01, 0x01, From3Borrow4));
 	_registers.tClock.Cycle(1, 12);
 }
 
@@ -1460,6 +1543,9 @@ void CPU::DEC_MM()
 	uint8 tempMM = Read8(_registers.HL());
 	tempMM -= 0x01;
 	Write8(_registers.HL(), tempMM);
+	Set_Z((_registers.HL() == 0));
+	Set_N(TRUE);
+	Set_H(HCarryBorrow(tempMM + 0x01, 0x01, From3Borrow4));
 	_registers.tClock.Cycle(1, 12);
 }
 
@@ -1481,9 +1567,10 @@ void CPU::JR_C_R()
 {
 	if (Get_Bit(_registers.F, 4) == TRUE)
 	{
-		_registers.PC += Read8(_registers.PC);
+		/*_registers.PC += Read8(_registers.PC);
 		_hasSetPC = TRUE;
-		_registers.tClock.Cycle(2, 12);
+		_registers.tClock.Cycle(2, 12);*/
+		JR_R();
 	}
 	else
 	{
@@ -1495,16 +1582,12 @@ void CPU::ADD_HL_SP()
 {
 	uint32 oldHL = _registers.HL();
 	uint32 oldSP = _registers.SP;
-	BOOL hCarried = FALSE;
 	BOOL cCarried = FALSE;
+	BOOL hCarried = HCarryFrom(oldHL, oldSP, From11Borrow12);
 
 	if (oldHL + oldSP > 0xFFFF)
 	{
 		cCarried = TRUE;
-	}
-	if (oldHL & 0x00FF + oldSP > 0x0F00)
-	{
-		hCarried = TRUE;
 	}
 
 	_registers.HL(_registers.HL() + _registers.SP);
@@ -1530,14 +1613,12 @@ void CPU::DEC_SP()
 
 void CPU::INC_A()
 {
-	_registers.A++;
-	_registers.tClock.Cycle(1, 4);
+	INC_M(_registers.A);
 }
 
 void CPU::DEC_A()
 {
-	_registers.A--;
-	_registers.tClock.Cycle(1, 4);
+	DEC_M(_registers.A);
 }
 
 void CPU::LD_A_R()
@@ -1841,6 +1922,7 @@ void CPU::LD_MM_L()
 void CPU::HALT()
 {
 	//TODO: HALT
+	Write8(0xFFFF, 0x01);
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2170,7 +2252,7 @@ void CPU::AND_MM()
 	Set_Bit(_registers.F, 6, 0);
 	Set_Bit(_registers.F, 5, 1);
 	Set_Bit(_registers.F, 4, 0);
-	_registers.tClock.Cycle(1, 4);
+	_registers.tClock.Cycle(1, 8);
 }
 
 void CPU::AND_A()
@@ -2323,6 +2405,7 @@ void CPU::CP_L()
 void CPU::CP_MM()
 {
 	CP_M(Read8(_registers.HL()));
+	_registers.tClock.Cycle(1, 8);
 }
 
 void CPU::CP_A()
@@ -2332,12 +2415,13 @@ void CPU::CP_A()
 
 void CPU::CP_M(uint8 value)
 {
+	BOOL hCarried = HCarryBorrow(_registers.A, value, From3Borrow4);
 	uint8 cmp = _registers.A - value;
 	Set_Bit(_registers.F, 7, (cmp == 0));
-	Set_Bit(_registers.F, 6, 1);
-	Set_Bit(_registers.F, 5, ((uint16)(_registers.A & 0x0F) < ((uint16)(value & 0x0f))));
+	Set_Bit(_registers.F, 6, TRUE);
+	Set_Bit(_registers.F, 5, hCarried);
 	Set_Bit(_registers.F, 4, (_registers.A < value));
-	_registers.tClock.Cycle(2, 8);
+	_registers.tClock.Cycle(1, 4);
 }
 
 void CPU::RET_NZ()
@@ -2371,6 +2455,7 @@ void CPU::JP_RR()
 	uint16 jmpTo = Read16(_registers.PC);
 	_registers.PC = jmpTo;
 	_hasSetPC = TRUE;
+	_registers.tClock.Cycle(3, 16);
 }
 
 void CPU::CALL_NZ_RR()
@@ -2433,6 +2518,7 @@ void CPU::JP_Z_RR()
 
 void CPU::PREFIX_CB()
 {
+	_registers.tClock.Cycle(1, 4);
 }
 
 void CPU::CALL_Z_RR()
@@ -2453,7 +2539,7 @@ void CPU::CALL_RR()
 	_registers.PC = nn;
 	_hasSetPC = TRUE;
 
-	_registers.tClock.Cycle(3, 12);
+	_registers.tClock.Cycle(3, 24);
 }
 
 void CPU::ADC_A_R()
@@ -2538,9 +2624,10 @@ void CPU::RET_C()
 
 void CPU::RETI()
 {
+	EI();
 	RET();
-
 	//TODO: interupts
+	_registers.tClock.Cycle(1, 16);
 }
 
 void CPU::JP_C_RR()
@@ -2592,7 +2679,7 @@ void CPU::POP_HL()
 void CPU::LD_C_A2()
 {
 	Write8(0xFF00 + _registers.C, _registers.A);
-	_registers.tClock.Cycle(2, 8);
+	_registers.tClock.Cycle(1, 8);
 }
 
 void CPU::PUSH_HL()
@@ -2621,15 +2708,29 @@ void CPU::RST_20H()
 
 void CPU::ADD_SP_R()
 {
-	uint8 n = Read8(_registers.PC);
-	BOOL c = _registers.SP & 0xFF + n & 0xFF >> 8 & 0xFF;
-	BOOL h = _registers.SP & 0x0F + n & 0x0F >> 4 & 0x01;
-	_registers.SP += n;
+	uint8 e = Read8(_registers.PC);
+	BOOL c = FALSE;
+	BOOL h = FALSE;
+	if (Get_Bit(e, 7) == TRUE)
+	{
+		//Make Negative;
+		e -= 0x80;
+		e = 0x80 - e;
+		c = (((_registers.SP & 0xFF) - (e & 0xFF)) >> 8) & 0xFF;
+		h = (((_registers.SP & 0x0F) - (e & 0x0F)) >> 4) & 0x01;
+		_registers.SP -= e;
+	}
+	else
+	{
+		c = (((_registers.SP & 0xFF) + (e & 0xFF)) >> 8) & 0xFF;
+		h = (((_registers.SP & 0x0F) + (e & 0x0F)) >> 4) & 0x01;
+		_registers.SP += e;
+	}
 	Set_Bit(_registers.F, 7, 0);
 	Set_Bit(_registers.F, 6, 0);
 	Set_Bit(_registers.F, 5, c);
 	Set_Bit(_registers.F, 4, h);
-	_registers.tClock.Cycle(2, 8);
+	_registers.tClock.Cycle(2, 16);
 }
 
 void CPU::JP_MM()
@@ -2673,12 +2774,13 @@ void CPU::POP_AF()
 void CPU::LD_A_C2()
 {
 	_registers.A = Read8(0xFF00 + _registers.C);
-	_registers.tClock.Cycle(2, 8);
+	_registers.tClock.Cycle(1, 8);
 }
 
 void CPU::DI()
 {
 	//TODO: DI (not important now)
+	Write8(IE, FALSE);
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2705,7 +2807,20 @@ void CPU::RST_30H()
 void CPU::LD_HL_SPandR()
 {
 	uint16 oldHL = _registers.HL();
-	_registers.HL(_registers.SP + Read8(_registers.PC));
+
+	uint8 e = Read8(_registers.PC);
+	if (Get_Bit(e, 7) == TRUE)
+	{
+		//Make Negative;
+		e -= 0x80;
+		e = 0x80 - e;
+		e = _registers.SP - e;
+	}
+	else
+	{
+		e = _registers.SP + e;
+	}
+	_registers.HL(e);
 	BOOL c = _registers.HL() & 0xFF + oldHL & 0xFF >> 8 & 0xFF;
 	BOOL h = _registers.HL() & 0x0F + oldHL & 0x0F >> 4 & 0x01;
 	_registers.tClock.Cycle(2, 12);
@@ -2731,7 +2846,7 @@ void CPU::LD_A_RR()
 void CPU::EI()
 {
 	//TODO: SET INTERUPTS
-
+	Write8(IE, 0xFF);
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2757,7 +2872,7 @@ void CPU::LD_M_M(uint8 & address, uint8 value)
 
 void CPU::INC_M(uint8 & address)
 {
-	BOOL hCarried = (address & 0x0F) < (address + 0x01 & 0x0F);
+	BOOL hCarried = HCarryFrom(address, 0x01, From3Borrow4);
 	address += 0x01;
 	Set_Bit(_registers.F, 7, (address == 0));
 	Set_Bit(_registers.F, 6, FALSE);
@@ -2767,7 +2882,7 @@ void CPU::INC_M(uint8 & address)
 
 void CPU::DEC_M(uint8 & address)
 {
-	BOOL hCarried = (address & 0x0F) > (address - 0x01 & 0x0F);
+	BOOL hCarried = HCarryBorrow(address, 0x01, From3Borrow4);
 	address -= 0x01;
 	Set_Bit(_registers.F, 7, (address == 0));
 	Set_Bit(_registers.F, 6, TRUE);

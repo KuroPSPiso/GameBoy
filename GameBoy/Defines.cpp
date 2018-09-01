@@ -12,6 +12,18 @@ void Set_Bit(uint8 &value, uint8 bitNo, BOOL status)
 	}
 }
 
+void Set_Bit(uint16 &value, uint8 bitNo, BOOL status)
+{
+	if (status == TRUE)
+	{
+		value |= (1 << bitNo);
+	}
+	else
+	{
+		value &= ~(1 << bitNo);
+	}
+}
+
 BOOL Get_Bit(uint8 value, uint8 bitNo)
 {
 	return (value >> bitNo) & 1;

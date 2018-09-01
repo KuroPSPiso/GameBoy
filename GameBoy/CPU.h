@@ -11,8 +11,8 @@ class CPU
 	typedef void (CPU::*opcode)(void);
 
 	struct Clock {
-		uint8 byte_call_cycles; 
-		uint8 cpu_cycles;
+		uint16 byte_call_cycles; 
+		uint16 cpu_cycles;
 
 		void Cycle(uint8 byteCalls, uint8 cycles) {
 			byte_call_cycles = byteCalls;
@@ -77,6 +77,7 @@ public:
 
 	//sequence
 	void Reset();
+	uint16 GetCycles();
 	bool Run();
 
 private:

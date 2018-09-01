@@ -5,13 +5,19 @@
 #elif _WIN32
 #include <Windows.h>
 #endif
+#include "Defines.h"
 
 class Input
 {
+	uint8 _controller;
+
 public:
 	Input();
 	~Input();
 
+	uint8 GetController();
+
+	int HasInput();
 	int IsExit();
 };
 
