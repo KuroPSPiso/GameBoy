@@ -8,18 +8,25 @@ Cartidge::Cartidge(char* path)
 
 void Cartidge::Load(char * path)
 {
-	ifstream file(path, ios::binary);
+	ifstream file(path, ios::in | ios::binary | ios::ate);
 	if (!file.fail())
 	{
-		char* tempData = new char[0xFFFF];
-		_ROM = new uint8[0xFFFF];
-		uint16 byteCounter = 0x0000;
+		char* tempData = 0;
+		file.seekg(0, ios::end);
+		ifstream::pos_type pos = file.tellg();
+		file.seekg(0, ios::beg);
+		int length = pos;
+		tempData = new char[length + 1];
+		file.read(tempData, length);
+		tempData[length] = '\0';
+		file.close();
 		/*while (file.eof() == FALSE)
 		{
-			tempData[byteCounter] = file.get();
+			file >> byte;
+			tempData[byteCounter] = byte;
 			byteCounter++;
 		}*/
-		file.read(tempData, 0xFFFF);
+		//file.read(tempData, 0xFFFF);
 
 		//Loop header
 		uint8 bpm[] = {
@@ -34,11 +41,13 @@ void Cartidge::Load(char * path)
 
 		_details.nintendoBMP = true;
 		_details.isValid = FALSE;
+		_ROM = new uint8[0x10001];
 		for (uint16 i = 0; i < 0xFFFF; i++)
 		{
-			uint8 byte = tempData[i];
-			_ROM[i] = byte;
+			_ROM[i] = tempData[i];
 		}
+		_ROM[0xFFFF] = 0x00;
+		_ROM[0x10000] = '\0';
 
 		for (uint16 i = 0x0104; i <= 0x014D; i++)
 		{

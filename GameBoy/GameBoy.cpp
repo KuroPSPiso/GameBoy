@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include "CPU.h"
-#include "GPU.h"
+#include "PPU.h"
 #include "Defines.h"
 
 Cartidge* cartridge;
 MMU* mmu;
 CPU* cpu;
-GPU* gpu;
+PPU* ppu;
 
 int test = 0;
 
@@ -14,6 +14,7 @@ char* tPath = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\
 char* cpuTestPath = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\cpu_instrs.gb";
 char* cpuTestPath2 = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\oam_bug.gb";
 char* rom = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\rom.bin";
+char* gpu = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\opus5.gb";
 
 void update(int i, int& ref) {
 	ref = i;
@@ -21,14 +22,15 @@ void update(int i, int& ref) {
 
 int main()
 {
-	cartridge = new Cartidge(tPath);
+	cartridge = new Cartidge(gpu);
 	mmu = new MMU(cartridge);
 	cpu = new CPU(mmu);
-	gpu = new GPU(cpu, mmu);
+	ppu = new PPU(cpu, mmu);
+	
 
 	while (cpu->Run())
 	{
-		gpu->Draw();
+		ppu->Draw();
 	}
 
     return 0;

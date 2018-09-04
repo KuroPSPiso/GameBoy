@@ -53,13 +53,19 @@ MMU::~MMU()
 void MMU::Reset()
 {
 	Set_Bios();
-	_ROM = _cartridge->Get_ROM();
+	_ROM = _cartridge->Get_ROM(); //bottom 32k
 	_VRAM = new uint8[0x2000];
 	_ERAM = new uint8[0x2000];
 	_WRAM = new uint8[0x2000]; // duplicates from 0xC000-0xDE00 to 0xE000-FDFF
 	_OAM = new uint8[0x00A0];
 	_IO = new uint8[0x004C];
 	_ZPRAM = new uint8[0x0079];
+
+	for (uint16 address = 0x8000; address < 0xFFFF; address += 0x01)
+	{
+		//clear all data
+		Write8(address, 0x00);
+	}
 }
 
 uint8 MMU::Read8(uint16 address)
@@ -169,7 +175,21 @@ void MMU::Write8(uint16 address, uint8 value)
 		break;
 	case 0x9000:
 	case 0x8000:
+	{
 		_VRAM[address - 0x8000] = value;
+
+		//update tile
+		uint16 base = address & 0x1FFE;
+		uint16 tile = (base >> 4) & 0x1FF;
+		uint16 y = (base >> 1) & 0x07;
+
+		uint16 sx;
+		for (uint8 x = 0; x < 0x08; x++)
+		{
+			sx = 1 << (7 - x);
+			_VRAM[(tile + y + x)] = ((_VRAM[address - 0x8000] & sx) ? 1 : 0) + ((_VRAM[address - 0x7FFF] & sx) ? 2 : 0);
+		}
+	}
 		break;
 	case 0x7000:
 	case 0x6000:
@@ -188,4 +208,29 @@ void MMU::Write16(uint16 address, uint16 value)
 {
 	Write8(address,				value & 0x00FF);
 	Write8(address + 0x0001,	value >> 8);
+}
+
+void MMU::WriteInput(Input* inputRef, BOOL isDirectional)
+{
+	uint8 input = 0x00;
+	uint8 registeredInput = inputRef->GetController();
+	if (isDirectional)
+	{
+		Set_Bit(input, 0, Get_Bit(registeredInput, 0));
+		Set_Bit(input, 1, Get_Bit(registeredInput, 1));
+		Set_Bit(input, 2, Get_Bit(registeredInput, 2));
+		Set_Bit(input, 3, Get_Bit(registeredInput, 3));
+		Set_Bit(input, 4, Get_Bit(registeredInput, 1));
+		Set_Bit(input, 5, Get_Bit(registeredInput, 0));
+	}
+	else
+	{
+		Set_Bit(input, 0, Get_Bit(registeredInput, 0 + 4));
+		Set_Bit(input, 1, Get_Bit(registeredInput, 1 + 4));
+		Set_Bit(input, 2, Get_Bit(registeredInput, 2 + 4));
+		Set_Bit(input, 3, Get_Bit(registeredInput, 3 + 4));
+		Set_Bit(input, 4, Get_Bit(registeredInput, 0));
+		Set_Bit(input, 5, Get_Bit(registeredInput, 1));
+	}
+	Write8(P1, input);
 }

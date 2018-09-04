@@ -78,6 +78,7 @@ public:
 	//sequence
 	void Reset();
 	uint16 GetCycles();
+	uint16 ResetCycles();
 	bool Run();
 
 private:

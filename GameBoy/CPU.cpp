@@ -902,6 +902,10 @@ uint16 CPU::GetCycles()
 {
 	return _clock.cpu_cycles;
 }
+uint16 CPU::ResetCycles()
+{
+	return _clock.cpu_cycles = 0;
+}
 
 bool CPU::Run()
 {
@@ -915,7 +919,8 @@ bool CPU::Run()
 	BOOL runningState = TRUE;
 	uint8 val = Read8(_registers.PC);
 	uint16 pc = _registers.PC;
-	printf("%s [0x%X] (0x%X)\n", opcodeNames[val], pc, val);
+	//printf("%s [0x%X] (0x%X)\n", opcodeNames[val] , pc, val);
+	//cout << opcodeNames[val];
 	_registers.PC += 0x0001;
 	if (val == 0xCB)
 	{
