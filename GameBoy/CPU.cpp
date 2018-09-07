@@ -5,7 +5,7 @@
 #define From3Borrow4 0x10
 #define HCarryFrom(val, change, bit) (((val & (bit - 0x01)) + (change & (bit - 0x01))) & bit) == bit
 #define HCarryBorrow(val, change, bit) (((val & (bit - 0x01)) - (change & (bit - 0x01))) & bit) == bit
-#define math8(N, C, d1, d2, f, hCarried, cCarried) \
+/*#define math8(N, C, d1, d2, f, hCarried, cCarried) \
 if(N == 0) \
 {\
 	cCarried = (((uint16)d2 + d1 + C) >> 8) & 0x01;\
@@ -23,7 +23,41 @@ else \
 Set_Bit(f, 6, (d2 == 0)); \
 Set_Bit(f, 6, N); \
 Set_Bit(f, 5, hCarried); \
-Set_Bit(f, 4, cCarried);
+Set_Bit(f, 4, cCarried);*/
+
+void CPU::math8(BOOL method, BOOL C, uint16 dataChange, uint8& dataRef, uint8& f, BOOL& hCarried, BOOL& cCarried)
+{
+	if (method == 0)
+	{
+		uint16 cCarriedT = 0x0000 + dataRef;
+		cCarriedT += (dataChange + C);
+		cCarriedT &= 0x0F00;
+		cCarriedT >>= 8;
+		cCarriedT &= 0x01;
+		cCarried = (cCarriedT == 0x0001) ? TRUE : FALSE;
+		//cCarried = (((uint16)dataRef + dataChange + C) >> 8) & 0x01; 
+		if (dataChange + C > 0x0f) { hCarried = true; }
+		else { hCarried = HCarryFrom(dataRef, dataChange + C, From3Borrow4); }
+			dataRef = dataRef + dataChange + C;
+	}
+	else 
+	{
+		uint16 cCarriedT = 0x0100 + dataRef;
+		cCarriedT -= (dataChange + C);
+		cCarriedT &= 0x0F00;
+		cCarriedT >>= 8;
+		cCarriedT &= 0x01;
+		cCarried = (cCarriedT == 0x0001)? FALSE : TRUE;
+		//cCarried = (((uint16)((0xff - dataRef) & 0x0f) + ((0xff - dataChange) & 0x0f) + ((0xff - C) & 0x0f)) & 0xf0 >> 4 & 0x01);
+		if (dataChange + C > 0x0f) { hCarried = true; }
+		else { hCarried = HCarryBorrow(dataRef, dataChange + C, From3Borrow4); }
+			dataRef = dataRef - dataChange - C;
+	}
+	Set_Bit(_registers.F, 6, (dataRef == 0));
+	Set_Bit(_registers.F, 6, method);
+	Set_Bit(_registers.F, 5, hCarried);
+	Set_Bit(_registers.F, 4, cCarried);
+}
 
 Input* input;
 char* opcodeNames[0xff];
@@ -857,8 +891,8 @@ void CPU::Reset()
 	_registers.L = 0;
 	_registers.SP = 0;
 	_registers.PC = 0x0000;
-
-	/*_registers.AF	(0x01);
+	/*
+	_registers.AF	(0x01B0);
 	_registers.F	= 0xB0;
 	_registers.BC	(0x0013);
 	_registers.DE	(0x00D8);
@@ -895,7 +929,9 @@ void CPU::Reset()
 	Write8(OBP1, 0xFF);
 	Write8(WY, 0x00);
 	Write8(WX, 0x00);
-	Write8(IE, 0x00);*/
+	Write8(IE, 0x00);
+	_mmu->BIOSLoaded(TRUE);
+	Write8(STAT, 0x02);*/
 }
 
 uint16 CPU::GetCycles()
@@ -913,6 +949,11 @@ bool CPU::Run()
 	if (_registers.PC == 0x100)
 	{
 		_mmu->BIOSLoaded(TRUE);
+	}
+
+	if (_registers.PC == 0x0055)
+	{
+		int i = 0;
 	}
 
 	//(expected sequence)
@@ -1033,7 +1074,7 @@ void CPU::NOP()
 
 void CPU::LD_BC_RR()
 {
-	Write8(_registers.BC(), Read8(_registers.PC));
+	_registers.BC(Read16(_registers.PC));
 	_registers.tClock.Cycle(3, 12);
 }
 
@@ -2045,7 +2086,7 @@ void CPU::ADD_A_M(uint8 value)
 
 	BOOL hCarried = FALSE;
 	BOOL cCarried = FALSE;
-	math8(FALSE, 0, Read8(_registers.HL()), _registers.A, _registers.F, hCarried, cCarried);
+	math8(FALSE, 0, value, _registers.A, _registers.F, hCarried, cCarried);
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2118,7 +2159,7 @@ void CPU::ADC_A_M(uint8 value)
 
 	BOOL hCarried = FALSE;
 	BOOL cCarried = FALSE;
-	math8(FALSE, Get_Bit(_registers.F, 4), Read8(_registers.HL()), _registers.A, _registers.F, hCarried, cCarried);
+	math8(FALSE, Get_Bit(_registers.F, 4), value, _registers.A, _registers.F, hCarried, cCarried);
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2167,7 +2208,7 @@ void CPU::SUB_A_M(uint8 value)
 {
 	BOOL hCarried = FALSE;
 	BOOL cCarried = FALSE;
-	math8(TRUE, 0, Read8(_registers.HL()), _registers.A, _registers.F, hCarried, cCarried);
+	math8(TRUE, 0, value, _registers.A, _registers.F, hCarried, cCarried);
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2460,7 +2501,7 @@ void CPU::JP_RR()
 	uint16 jmpTo = Read16(_registers.PC);
 	_registers.PC = jmpTo;
 	_hasSetPC = TRUE;
-	_registers.tClock.Cycle(3, 16);
+	_registers.tClock.Cycle(3, 12);
 }
 
 void CPU::CALL_NZ_RR()
@@ -2544,7 +2585,7 @@ void CPU::CALL_RR()
 	_registers.PC = nn;
 	_hasSetPC = TRUE;
 
-	_registers.tClock.Cycle(3, 24);
+	_registers.tClock.Cycle(3, 12);
 }
 
 void CPU::ADC_A_R()

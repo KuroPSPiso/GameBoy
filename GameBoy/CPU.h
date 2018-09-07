@@ -72,6 +72,8 @@ private:
 	opcode _cbOpcodeTable[0xFF];
 	
 public:
+	
+	void math8(BOOL method, BOOL C, uint16 dataChange, uint8 & dataRef, uint8 & f, BOOL & hCarried, BOOL & cCarried);
 	CPU(MMU* mmu);
 	~CPU();
 

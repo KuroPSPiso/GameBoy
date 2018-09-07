@@ -13,6 +13,7 @@ class PPU
 {
 
 	uint8 display[0x5A00];
+	uint8 _display[0xA0][0x90];
 	CPU* _cpu;
 	MMU* _mmu;
 
@@ -24,9 +25,15 @@ public:
 
 	void Reset();
 
+	void ResetTileSet();
+
+	void UpdateTileSet();
+
 	void Print();
 
 	void PrintLine();
+
+	void ScanLine();
 
 	void PPU::Draw();
 };

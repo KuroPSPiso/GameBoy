@@ -11,9 +11,7 @@
 #define PXS0 ' '
 
 class CharArray {
-	struct {
-		int length;
-	};
+	int length;
 	char* data;
 
 private:
@@ -29,6 +27,7 @@ private:
 	}
 
 public:
+
 	CharArray()
 	{
 		data = NULL;
@@ -107,6 +106,8 @@ public:
 		length = 0;
 	}
 
+	int Length() { return length; }
+
 	char* ToString()
 	{
 		return data;
@@ -166,24 +167,34 @@ void PPU::Reset()
 		}
 	}
 
+	ResetTileSet();
+	UpdateTileSet();
+	Print();
+}
+
+CharArray *displayArray = new CharArray();
+
+void PPU::ResetTileSet()
+{
 	//Set tileset
-	for (uint8 x = 0; x < 0xC0; x++) 
-	{ 
-		for (uint8 y = 0; y < 0x02; y++) 
-		{ 
-			for (uint8 z = 0; z < 0x0F; z+=2)
+	for (uint8 x = 0; x < 0xC0; x++)
+	{
+		for (uint8 y = 0; y < 0x02; y++)
+		{
+			for (uint8 z = 0; z < 0x0F; z += 2)
 			{
 				uint16 line = 0x0000;
 				uint16 address = 0x8000 + z + (y * 2) + (x * 16);
 				_mmu->Write16(address, line);
 			}
-		} 
+		}
 	}
-
-	Print();
 }
 
-CharArray *displayArray = new CharArray();
+void PPU::UpdateTileSet()
+{
+
+}
 
 void PPU::Print()
 {
@@ -210,6 +221,7 @@ void PPU::Print()
 
 void PPU::PrintLine()
 {
+	/*
 	uint8 mapOffset = _mmu->Read8(BGP) ? 0x1C00 : 0x1800;
 	mapOffset += ((_mmu->Read8(LY) + _mmu->Read8(SCY)) & 0xFF) >> 3;
 
@@ -223,31 +235,64 @@ void PPU::PrintLine()
 	if (Get_Bit(_mmu->Read8(LCDC), 4) && tileIndex < 128) tileIndex += 256;
 	tileIndex += 0x8000;
 
+	*/
+	CharArray displayLine;
 
-	//CharArray *displayLine = new CharArray();
-	for (int i = 0; i < 160/4; i++)
+	ofstream mapfs("tiles.txt", ofstream::out);
+
+
+	mapfs << "tile set 0 8000-8FFF \n";
+	for (uint16 f = 0x0000; f <= 0x8FFF - 0x8000; f++)
 	{
-		uint8 pxr = _mmu->Read8(tileIndex + y + x);
-		display[canvasOffset + 0x0000] = (pxr & 0xF0) >> 6;
-		display[canvasOffset + 0x0001] = (pxr & 0x30) >> 4;
-		display[canvasOffset + 0x0002] = (pxr & 0x0F) >> 2;
-		display[canvasOffset + 0x0003] = (pxr & 0x03);
-		/*displayLine->Append(SetPrintChar(display[canvasOffset + 0x0003]));
-		displayLine->Append(SetPrintChar(display[canvasOffset + 0x0002]));
-		displayLine->Append(SetPrintChar(display[canvasOffset + 0x0001]));
-		displayLine->Append(SetPrintChar(display[canvasOffset + 0x0000]));*/
-
-		canvasOffset += 0x04;
-		x++;
-		if (x == 8)
-		{
-			x = 0;
-			lineOffset = (lineOffset + 1) & 31;
-			tileIndex = _mmu->Read8(mapOffset + lineOffset);
-			if (Get_Bit(_mmu->Read8(LCDC), 4) && tileIndex < 128) tileIndex += 256;
-			tileIndex += 0x8000;
-		}
+		mapfs << _mmu->Read8(f + 0x8000);
 	}
+
+	mapfs << "\n";
+
+	mapfs << "tile set 0 9000-97FF \n";
+	for (uint16 f = 0x0000; f <= 0x97FF - 0x9000; f++)
+	{
+		mapfs << _mmu->Read8(f + 0x9000);
+	}
+
+	mapfs << "\n";
+	mapfs << "tile map 0 9800-9BFF \n";
+	for (uint16 f = 0x0000; f <= 0x9BFF - 0x9800; f++)
+	{
+		mapfs << _mmu->Read8(f + 0x9800);
+	}
+
+	mapfs << "\n";
+	mapfs << "tile map 1 9C00-9FFF \n";
+	for (uint16 f = 0x0000; f <= 0x9FFF - 0x9C00; f++)
+	{
+		mapfs << _mmu->Read8(f + 0x9C00);
+	}
+	mapfs.flush();
+	mapfs.close();
+
+	char* charArray = new char[0x90 * 0xA1];
+	for (uint8 y = 0x00; y < 0x90; y++)
+	{
+		displayLine.Clear();
+		displayLine.Append('|');
+		for (uint8 x = 0x00; x < 0xA0; x++)
+		{
+			/*displayLine->Append(SetPrintChar(display[canvasOffset + 0x0003]));
+			displayLine->Append(SetPrintChar(display[canvasOffset + 0x0002]));
+			displayLine->Append(SetPrintChar(display[canvasOffset + 0x0001]));
+			displayLine->Append(SetPrintChar(display[canvasOffset + 0x0000]));*/
+			//displayLine.Append(_display[x][y]);
+			displayLine.Append(SetPrintChar(_display[x][y]));
+			//charArray[x + y * 160] = SetPrintChar(_display[x][y]);
+		}
+		//charArray[0xA0 + y * 160] = '\n';
+		displayLine.Append('|');
+		displayLine.Append('\n');
+		printf(displayLine.ToString());
+		//printf("\n");
+	}
+	printf("display rendered");
 	//if (displayLine->ToString() != NULL) {
 	//	displayArray->Clear();
 	//	displayArray->Append(displayLine->ToString());
@@ -259,13 +304,268 @@ void PPU::PrintLine()
 	//delete displayLine;
 }
 
-void PPU::Draw()
+void PPU::ScanLine()
 {
 	uint8 lcdc = _mmu->Read8(LCDC);
 
-	if (Get_Bit(lcdc, 7) == FALSE) { return; } //lcd is off
+	BOOL drawBG = Get_Bit(lcdc, 0);
+	BOOL objSize = Get_Bit(lcdc, 2);
+	BOOL mapSelect = Get_Bit(lcdc, 3);
+	BOOL tileSelect = Get_Bit(lcdc, 4);
+	BOOL drawWindow = Get_Bit(lcdc, 5);
+	uint8 scy	= _mmu->Read8(SCY);
+	uint8 scx	= _mmu->Read8(SCX);
+	uint8 wy	= _mmu->Read8(WY);
+	uint8 wx	= _mmu->Read8(WX);
+	uint8 line	= _mmu->Read8(LY);
 
+	if (drawBG == TRUE)
+	{
+		uint16 mapOffset = (mapSelect == FALSE) ? 0x9800 : 0x9C00;
+		uint16 tileOffset = (tileSelect == TRUE) ? 0x8000 : 0x8800;
+		BOOL isUnsigned = tileSelect;
+		uint8 tileSize = 0x10;
+		uint8 posY = 0x00;
+		uint16 tileRow = 0x0000;
+		uint8 tileRowRemainder = 0x00;
+		uint16 tileColumn = 0x0000;
+		uint8 tileColumnRemainder = 0x00;
+		uint16 tileAddress = 0x0000;
+		int tileNumber = 0;
+		if (drawWindow == FALSE)
+		{
+			posY = scy + line;
+		}
+		else
+		{
+			posY = wx + line;
+		}
+		tileRow = ((uint8)(posY / 8)) * 32; //current ypos / 8 pixel rows per tile * 32 (max) tiles
+		tileRowRemainder = (posY % 8);
+
+		for (int pixel = 0; pixel < 160; pixel++)
+		{
+			uint8 posX = pixel + scx;
+
+			if (drawWindow == TRUE)
+			{
+				if (posX >= wx)
+				{
+					posX = pixel - wx;
+				}
+			}
+			tileColumn = (posX / 8); //current ypos / 8 pixel columns per tile
+			tileColumnRemainder = (posX % 8);
+
+			tileAddress = mapOffset + tileRow + tileColumn;
+			if (isUnsigned == TRUE)
+			{
+				tileNumber = _mmu->Read8(tileAddress);
+			}
+			else
+			{
+				tileNumber = (signed int)_mmu->Read8(tileAddress);
+			}
+			uint16 tileLocation = tileOffset + (tileSize * (tileNumber + (isUnsigned == TRUE)? 0 : 128));
+			
+			//TODO: why?
+			tileColumnRemainder *= 2; 
+
+			uint8 colourBit = posX % 8;
+			colourBit -= 7;
+			colourBit *= -1;
+			//end why?
+
+			uint8 tileUnMapped2 = _mmu->Read8(tileAddress + tileColumnRemainder + 1);
+			uint8 tileUnMapped1 = _mmu->Read8(tileAddress + tileColumnRemainder + 0);
+			uint8 pxColour = Get_Bit(tileUnMapped2, colourBit);
+			pxColour <<= 1; //l-shift, set bit 1
+			pxColour |= Get_Bit(tileUnMapped1, colourBit); //set bit 0
+
+			if (line < 0x00 || line >= 0x90 || pixel < 0 || pixel >= 0xA0)
+			{
+				continue;
+			}
+
+			_display[pixel][line] = pxColour;
+		}
+		//Test draw full map
+		/*CharArray* bgMap = new CharArray[0xFF];
+		for (int x = 0; x < 0xFF; x++) //row no
+		{
+			bgMap[x].Clear();
+			uint8 *columns = new uint8[0xFF];
+			for (int y = 0; y < 0xFF; y+=0x01)
+			{
+				columns[x] = _mmu->Read8(mapOffset + y + (x * 0x100));
+				for (int z = 0; z < 0xFF; z++)
+				{
+					bgMap[x].Append(SetPrintChar(' '));
+				}
+			}
+			printf(bgMap[x].ToString());
+			printf("\n");
+		}*/
+		/* (06/09/18)
+		CharArray bgMap[0x100];
+		for (uint8 y = 0x00; y < 0x1f; y += 0x01) {
+			bgMap[(y * 0x08) + 0].Clear();
+			bgMap[(y * 0x08) + 1].Clear();
+			bgMap[(y * 0x08) + 2].Clear();
+			bgMap[(y * 0x08) + 3].Clear();
+			bgMap[(y * 0x08) + 4].Clear();
+			bgMap[(y * 0x08) + 5].Clear();
+			bgMap[(y * 0x08) + 6].Clear();
+			bgMap[(y * 0x08) + 7].Clear();
+			for (uint8 x = 0x00; x < 0xFF; x++) {
+				uint16 column = _mmu->Read16(mapOffset + (x * 0x10));
+				uint8 c0 = (column & 0x0003);
+				uint8 c1 = (column & 0x000C) >> 2;
+				uint8 c2 = (column & 0x0030) >> 4;
+				uint8 c3 = (column & 0x00C0) >> 6;
+				uint8 c4 = (column & 0x0300) >> 8;
+				uint8 c5 = (column & 0x0C00) >> 10;
+				uint8 c6 = (column & 0x3000) >> 12;
+				uint8 c7 = (column & 0xC000) >> 14;
+				bgMap[(y * 0x08) + 0].Append(SetPrintChar(c0));
+				bgMap[(y * 0x08) + 1].Append(SetPrintChar(c1));
+				bgMap[(y * 0x08) + 2].Append(SetPrintChar(c2));
+				bgMap[(y * 0x08) + 3].Append(SetPrintChar(c3));
+				bgMap[(y * 0x08) + 4].Append(SetPrintChar(c4));
+				bgMap[(y * 0x08) + 5].Append(SetPrintChar(c5));
+				bgMap[(y * 0x08) + 6].Append(SetPrintChar(c6));
+				bgMap[(y * 0x08) + 7].Append(SetPrintChar(c7));
+			}
+		}*/
+		/*
+		for (int i = 0; i < 0xFF; i++)
+		{
+			if (bgMap != NULL)
+			{
+				if (bgMap[i].ToString() != NULL)
+				{
+					printf(bgMap[i].ToString());
+				}
+			}
+		}*/
+		/*
+		ofstream mapfs("mapdata.txt", ofstream::out);
+		for (int x = 0; x < 0x20 * 32; x++)
+		{
+			printf("blk %d:\n", x);
+			mapfs << "blk " << x << ":\n";
+			uint16 columns[8];
+
+			for (int i = 0; i < 8; i++)
+			{
+				columns[i] = 0x00;
+			}
+
+			uint8 subAddress = _mmu->Read8(mapOffset + (x * 16));
+
+			columns[0] = _mmu->Read16(8000 + subAddress);
+			columns[1] = _mmu->Read16(8001 + subAddress);
+			columns[2] = _mmu->Read16(8002 + subAddress);
+			columns[3] = _mmu->Read16(8003 + subAddress);
+			columns[4] = _mmu->Read16(8004 + subAddress);
+			columns[5] = _mmu->Read16(8005 + subAddress);
+			columns[6] = _mmu->Read16(8006 + subAddress);
+			columns[7] = _mmu->Read16(8007 + subAddress);
+
+			for (int z = 0; z <= 7; z++)
+			{
+				for (int y = 0; y <= 7; y++)
+				{
+					uint8 c0 = (columns[y] & 0x0003) >> 0;
+					uint8 c1 = (columns[y] & 0x000C) >> 2;
+					uint8 c2 = (columns[y] & 0x0030) >> 4;
+					uint8 c3 = (columns[y] & 0x00C0) >> 6;
+					uint8 c4 = (columns[y] & 0x0300) >> 8;
+					uint8 c5 = (columns[y] & 0x0C00) >> 10;
+					uint8 c6 = (columns[y] & 0x3000) >> 12;
+					uint8 c7 = (columns[y] & 0xC000) >> 14;
+
+					switch (z)
+					{
+					case 7:
+						printf("%01x", c7);
+						mapfs << +c7;
+						//printf("%c", SetPrintChar(c3));
+						break;
+					case 6:
+						printf("%01x", c6);
+						mapfs << +c6;
+						//printf("%c", SetPrintChar(c3));
+						break;
+					case 5:
+						printf("%01x", c5);
+						mapfs << +c5;
+						//printf("%c", SetPrintChar(c3));
+						break;
+					case 4:
+						printf("%01x", c4);
+						mapfs << +c4;
+						//printf("%c", SetPrintChar(c3));
+						break;
+					case 3:
+						printf("%01x", c3);
+						mapfs << +c3;
+						//printf("%c", SetPrintChar(c3));
+						break;
+					case 2:
+						printf("%01x", c2);
+						mapfs << +c2;
+						//printf("%c", SetPrintChar(c2));
+						break;
+					case 1:
+						printf("%01x", c1);
+						mapfs << +c1;
+						//printf("%c", SetPrintChar(c1));
+						break;
+					case 0:
+						printf("%01x", c0);
+						mapfs << +c0;
+						//printf("%c", SetPrintChar(c0));
+						break;
+					}
+				}
+				printf("\n");
+				mapfs << "\n";
+			}
+		}
+		mapfs.flush();
+		mapfs.close();
+
+		int i = 0;*/
+	}
+	
+	if (drawWindow == TRUE)
+	{
+		if (tileSelect == TRUE) //unsigned map 1 (0x8000-0x8FFF)
+		{
+			uint16 tile = 0x00; //blank
+
+		}
+		else //signed map 2 (0x8800-0x97FF)
+		{
+			uint16 tile = 0x00; //blank
+		}
+	}
+}
+
+void PPU::Draw()
+{
+	uint8 lcdc = _mmu->Read8(LCDC);
 	uint8 stat = _mmu->Read8(STAT);
+
+	if (Get_Bit(lcdc, 7) == FALSE) //lcd is off
+	{ 
+		stat &= 252;
+		Set_Bit(stat, 0, 1);
+		_mmu->Write8(STAT, stat);
+		return;
+	} 
+
 	uint8 mode = (Get_Bit(stat, 1) << 1) + Get_Bit(stat, 0);
 	switch (mode)
 	{
@@ -292,13 +592,24 @@ void PPU::Draw()
 			_mmu->Write8(LY, row);
 			if (row >= 0x9A) //144 lines drawn + 10 vblank
 			{
+				
+				PrintLine();
 				row = 0x00;
 				_mmu->Write8(LY, row);
 				Set_Bit(stat, 0, FALSE);	//0x00
 				Set_Bit(stat, 1, TRUE);		//0x10
 				_mmu->Write8(STAT, stat);	//0x10 = 2
-				Print();
-				system("cls");
+				//Print();
+
+				//printf("\r\r%2d", 144);
+#if _WIN32
+				COORD coord;
+				coord.X = 0;
+				coord.Y = 0;
+				SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+#elif __linux__
+				printf("\033[1;1H");
+#endif
 				//printf("\t\tMODE-SWITCH-1-2");
 			}
 		}
@@ -314,6 +625,9 @@ void PPU::Draw()
 		}
 		break;
 	case MODE3: //OAM & VRAM reading
+		uint8 row = _mmu->Read8(LY) + 0x01;
+		_mmu->Write8(LY, row);
+		ScanLine();
 		if (_cpu->GetCycles() >= 169)
 		{
 			_cpu->ResetCycles();
@@ -321,8 +635,13 @@ void PPU::Draw()
 			Set_Bit(stat, 1, FALSE);		//0x00
 			_mmu->Write8(STAT, stat);		//0x00 = 0
 			//printf("\t\tMODE-SWITCH-3-0");
-			PrintLine();
+			row = 0x00;
+			_mmu->Write8(LY, row);
+			//PrintLine();
 		}
 		break;
 	}
+
+	Set_Bit(stat, 2, (_mmu->Read8(LY) == _mmu->Read8(LYC)));
+	_mmu->Write8(STAT, stat);
 }
