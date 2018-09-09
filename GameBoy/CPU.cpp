@@ -891,6 +891,7 @@ void CPU::Reset()
 	_registers.L = 0;
 	_registers.SP = 0;
 	_registers.PC = 0x0000;
+	
 	/*
 	_registers.AF	(0x01B0);
 	_registers.F	= 0xB0;

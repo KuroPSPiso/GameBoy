@@ -10,7 +10,7 @@ PPU* ppu;
 
 int test = 0;
 
-char* tPath = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\t.gb";
+char* t = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\t.gb";
 char* cpuTestPath = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\cpu_instrs.gb";
 char* cpuTestPath2 = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\oam_bug.gb";
 char* rom = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\rom.bin";

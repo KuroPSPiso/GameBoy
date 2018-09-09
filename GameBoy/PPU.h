@@ -17,23 +17,24 @@ class PPU
 	CPU* _cpu;
 	MMU* _mmu;
 
+	char PPU::SetPrintChar(uint8 val);
+
 public:
 	PPU(CPU* cpu, MMU* mmu);
 	~PPU();
 
-	char SetPrintChar(uint8 val);
 
-	void Reset();
+	void PPU::Reset();
 
-	void ResetTileSet();
+	void PPU::ResetTileSet();
 
-	void UpdateTileSet();
+	void PPU::UpdateTileSet();
 
-	void Print();
+	void PPU::Print();
 
-	void PrintLine();
+	void PPU::PrintLine(uint8 row, BOOL printAll = FALSE);
 
-	void ScanLine();
+	void PPU::ScanLine();
 
 	void PPU::Draw();
 };

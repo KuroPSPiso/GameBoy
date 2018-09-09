@@ -143,33 +143,33 @@ char PPU::SetPrintChar(uint8 val)
 
 void PPU::Reset()
 {
-	for (int i = 0; i < 144; i++)
+	for (int y = 0; y < 144; y++)
 	{
-		printf("\r");
-	}
-	for (int iDisplay = 0; iDisplay < 160 * 144; iDisplay++)
-	{
-		srand(iDisplay);
-		switch (rand() % 4 + 1)
+		for (int x = 0; x < 160; x++)
 		{
-		case CLR1:
-			display[iDisplay] = CLR1;
-			break;
-		case CLR2:
-			display[iDisplay] = CLR2;
-			break;
-		case CLR3:
-			display[iDisplay] = CLR3;
-			break;
-		default:
-			display[iDisplay] = CLR0;
-			break;
+			//srand(iDisplay);
+			int random = rand() % 4 + 1;
+			switch (0x02)
+			{
+			case CLR1:
+				_display[x][y] = CLR1;
+				break;
+			case CLR2:
+				_display[x][y] = CLR2;
+				break;
+			case CLR3:
+				_display[x][y] = CLR3;
+				break;
+			default:
+				_display[x][y] = CLR0;
+				break;
+			}
 		}
 	}
 
 	ResetTileSet();
 	UpdateTileSet();
-	Print();
+	//Print();
 }
 
 CharArray *displayArray = new CharArray();
@@ -198,6 +198,7 @@ void PPU::UpdateTileSet()
 
 void PPU::Print()
 {
+	/*
 	uint8 lineno = 0x00;
 	printf("\n%X", lineno);
 	for (int iDisplayY = 0; iDisplayY < 144 - 1; iDisplayY++)
@@ -216,92 +217,115 @@ void PPU::Print()
 		}
 		printf("\n%X", iDisplayY);
 		displayArray->Clear();
-	}
-}
-
-void PPU::PrintLine()
-{
-	/*
-	uint8 mapOffset = _mmu->Read8(BGP) ? 0x1C00 : 0x1800;
-	mapOffset += ((_mmu->Read8(LY) + _mmu->Read8(SCY)) & 0xFF) >> 3;
-
-	uint8 lineOffset = _mmu->Read8(SCY) >> 3;
-
-	uint8 y = (_mmu->Read8(LY) + _mmu->Read8(SCY)) & 0x07;
-	uint8 x = _mmu->Read8(SCX) & 0x07;
-	uint8 canvasOffset = _mmu->Read8(LY) * 160 * 4;
-	uint8 colour = 0x00;
-	uint16 tileIndex = _mmu->Read8(mapOffset + lineOffset);
-	if (Get_Bit(_mmu->Read8(LCDC), 4) && tileIndex < 128) tileIndex += 256;
-	tileIndex += 0x8000;
-
-	*/
+	}*/
 	CharArray displayLine;
-
-	ofstream mapfs("tiles.txt", ofstream::out);
-
-
-	mapfs << "tile set 0 8000-8FFF \n";
-	for (uint16 f = 0x0000; f <= 0x8FFF - 0x8000; f++)
-	{
-		mapfs << _mmu->Read8(f + 0x8000);
-	}
-
-	mapfs << "\n";
-
-	mapfs << "tile set 0 9000-97FF \n";
-	for (uint16 f = 0x0000; f <= 0x97FF - 0x9000; f++)
-	{
-		mapfs << _mmu->Read8(f + 0x9000);
-	}
-
-	mapfs << "\n";
-	mapfs << "tile map 0 9800-9BFF \n";
-	for (uint16 f = 0x0000; f <= 0x9BFF - 0x9800; f++)
-	{
-		mapfs << _mmu->Read8(f + 0x9800);
-	}
-
-	mapfs << "\n";
-	mapfs << "tile map 1 9C00-9FFF \n";
-	for (uint16 f = 0x0000; f <= 0x9FFF - 0x9C00; f++)
-	{
-		mapfs << _mmu->Read8(f + 0x9C00);
-	}
-	mapfs.flush();
-	mapfs.close();
-
-	char* charArray = new char[0x90 * 0xA1];
 	for (uint8 y = 0x00; y < 0x90; y++)
 	{
 		displayLine.Clear();
 		displayLine.Append('|');
 		for (uint8 x = 0x00; x < 0xA0; x++)
 		{
-			/*displayLine->Append(SetPrintChar(display[canvasOffset + 0x0003]));
-			displayLine->Append(SetPrintChar(display[canvasOffset + 0x0002]));
-			displayLine->Append(SetPrintChar(display[canvasOffset + 0x0001]));
-			displayLine->Append(SetPrintChar(display[canvasOffset + 0x0000]));*/
-			//displayLine.Append(_display[x][y]);
 			displayLine.Append(SetPrintChar(_display[x][y]));
-			//charArray[x + y * 160] = SetPrintChar(_display[x][y]);
 		}
-		//charArray[0xA0 + y * 160] = '\n';
 		displayLine.Append('|');
 		displayLine.Append('\n');
 		printf(displayLine.ToString());
 		//printf("\n");
 	}
-	printf("display rendered");
-	//if (displayLine->ToString() != NULL) {
-	//	displayArray->Clear();
-	//	displayArray->Append(displayLine->ToString());
-	//	displayArray->Append("\n");
-	//	//printf(displayLine->ToString());
-	//	//printf("\n");
-	//	displayLine->Clear();
-	//}
-	//delete displayLine;
+	printf("display initialized");
+}
+
+void PPU::PrintLine(uint8 row, BOOL printAll)
+{
+	CharArray displayLine;
+	if (printAll == TRUE)
+	{
+		/*
+		uint8 mapOffset = _mmu->Read8(BGP) ? 0x1C00 : 0x1800;
+		mapOffset += ((_mmu->Read8(LY) + _mmu->Read8(SCY)) & 0xFF) >> 3;
+
+		uint8 lineOffset = _mmu->Read8(SCY) >> 3;
+
+		uint8 y = (_mmu->Read8(LY) + _mmu->Read8(SCY)) & 0x07;
+		uint8 x = _mmu->Read8(SCX) & 0x07;
+		uint8 canvasOffset = _mmu->Read8(LY) * 160 * 4;
+		uint8 colour = 0x00;
+		uint16 tileIndex = _mmu->Read8(mapOffset + lineOffset);
+		if (Get_Bit(_mmu->Read8(LCDC), 4) && tileIndex < 128) tileIndex += 256;
+		tileIndex += 0x8000;
+
+		*/
+
+		ofstream mapfs("tiles.txt", ofstream::out);
+
+
+		mapfs << "tile set 0 8000-8FFF \n";
+		for (uint16 f = 0x0000; f <= 0x8FFF - 0x8000; f++)
+		{
+			mapfs << _mmu->Read8(f + 0x8000);
+		}
+
+		mapfs << "\n";
+
+		mapfs << "tile set 0 9000-97FF \n";
+		for (uint16 f = 0x0000; f <= 0x97FF - 0x9000; f++)
+		{
+			mapfs << _mmu->Read8(f + 0x9000);
+		}
+
+		mapfs << "\n";
+		mapfs << "tile map 0 9800-9BFF \n";
+		for (uint16 f = 0x0000; f <= 0x9BFF - 0x9800; f++)
+		{
+			mapfs << _mmu->Read8(f + 0x9800);
+		}
+
+		mapfs << "\n";
+		mapfs << "tile map 1 9C00-9FFF \n";
+		for (uint16 f = 0x0000; f <= 0x9FFF - 0x9C00; f++)
+		{
+			mapfs << _mmu->Read8(f + 0x9C00);
+		}
+		mapfs.flush();
+		mapfs.close();
+
+		char* charArray = new char[0x90 * 0xA1];
+		for (uint8 y = 0x00; y < 0x90; y++)
+		{
+			displayLine.Clear();
+			displayLine.Append('|');
+			for (uint8 x = 0x00; x < 0xA0; x++)
+			{
+				displayLine.Append(SetPrintChar(_display[x][y]));
+			}
+			displayLine.Append('|');
+			displayLine.Append('\n');
+			printf(displayLine.ToString());
+		}
+		printf("display rendered");
+		//if (displayLine->ToString() != NULL) {
+		//	displayArray->Clear();
+		//	displayArray->Append(displayLine->ToString());
+		//	displayArray->Append("\n");
+		//	//printf(displayLine->ToString());
+		//	//printf("\n");
+		//	displayLine->Clear();
+		//}
+		//delete displayLine;
+	}
+	else
+	{
+		displayLine.Clear();
+		displayLine.Append('|');
+		for (uint8 x = 0x00; x < 0xA0; x++)
+		{
+			displayLine.Append(SetPrintChar(_display[x][row]));
+		}
+		displayLine.Append('|');
+		displayLine.Append('\n');
+		printf(displayLine.ToString());
+
+	}
 }
 
 void PPU::ScanLine()
@@ -557,6 +581,7 @@ void PPU::Draw()
 {
 	uint8 lcdc = _mmu->Read8(LCDC);
 	uint8 stat = _mmu->Read8(STAT);
+	uint8 row = _mmu->Read8(LY);
 
 	if (Get_Bit(lcdc, 7) == FALSE) //lcd is off
 	{ 
@@ -573,8 +598,11 @@ void PPU::Draw()
 		if (_cpu->GetCycles() >= 201)
 		{
 			_cpu->ResetCycles();
-			uint8 row = _mmu->Read8(LY) + 0x01;
+			row = _mmu->Read8(LY) + 0x01;
 			_mmu->Write8(LY, row);
+
+			//TODO: draw per row (but it's glitched)
+			//PrintLine(row, FALSE);
 			if (row >= 143)
 			{
 				Set_Bit(stat, 0, TRUE);			//0x01
@@ -582,26 +610,30 @@ void PPU::Draw()
 				_mmu->Write8(STAT, stat);		//0x01 = 1
 				//printf("\t\tMODE-SWITCH-0-1");
 			}
+			else
+			{
+				Set_Bit(stat, 0, FALSE);		//0x00
+				Set_Bit(stat, 1, TRUE);			//0x10
+				_mmu->Write8(STAT, stat);		//0x10 = 2
+			}
 		}
 		break;
 	case MODE1:	//V-Blank
 		if (_cpu->GetCycles() >= 456)
 		{
 			_cpu->ResetCycles();
-			uint8 row = _mmu->Read8(LY) + 0x01;
+			row += 0x01;
 			_mmu->Write8(LY, row);
+			Set_Bit(stat, 0, FALSE);	//0x00
+			Set_Bit(stat, 1, TRUE);		//0x10
+
 			if (row >= 0x9A) //144 lines drawn + 10 vblank
 			{
-				
-				PrintLine();
 				row = 0x00;
 				_mmu->Write8(LY, row);
-				Set_Bit(stat, 0, FALSE);	//0x00
-				Set_Bit(stat, 1, TRUE);		//0x10
 				_mmu->Write8(STAT, stat);	//0x10 = 2
 				//Print();
-
-				//printf("\r\r%2d", 144);
+				PrintLine(row, TRUE);
 #if _WIN32
 				COORD coord;
 				coord.X = 0;
@@ -610,6 +642,8 @@ void PPU::Draw()
 #elif __linux__
 				printf("\033[1;1H");
 #endif
+
+				//printf("\r\r%2d", 144);
 				//printf("\t\tMODE-SWITCH-1-2");
 			}
 		}
@@ -625,18 +659,18 @@ void PPU::Draw()
 		}
 		break;
 	case MODE3: //OAM & VRAM reading
-		uint8 row = _mmu->Read8(LY) + 0x01;
-		_mmu->Write8(LY, row);
-		ScanLine();
+		////uint8 row = _mmu->Read8(LY) + 0x01;
+		////_mmu->Write8(LY, row);
 		if (_cpu->GetCycles() >= 169)
 		{
+			ScanLine();
 			_cpu->ResetCycles();
 			Set_Bit(stat, 0, FALSE);		//0x00
 			Set_Bit(stat, 1, FALSE);		//0x00
 			_mmu->Write8(STAT, stat);		//0x00 = 0
 			//printf("\t\tMODE-SWITCH-3-0");
-			row = 0x00;
-			_mmu->Write8(LY, row);
+			////row = 0x00;
+			////_mmu->Write8(LY, row);
 			//PrintLine();
 		}
 		break;
