@@ -1,22 +1,3 @@
-﻿  CPU.cpp
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(973): warning C4552: '+': operator has no effect; expected operator with side-effect
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(974): warning C4552: '+': operator has no effect; expected operator with side-effect
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(999): warning C4800: 'BOOL': forcing value to bool 'true' or 'false' (performance warning)
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3438): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3445): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3452): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3459): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3466): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3473): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3480): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3487): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3556): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3564): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3572): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3580): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3588): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3596): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3604): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
-c:\users\adminuser.useradmin-pc\documents\visual studio 2015\projects\gameboy\gameboy\cpu.cpp(3612): warning C4244: 'initializing': conversion from 'uint16' to 'uint8', possible loss of data
+﻿  PPU.cpp
   GameBoy.vcxproj -> C:\Users\AdminUser.UserAdmin-PC\documents\visual studio 2015\Projects\GameBoy\Debug\GameBoy.exe
   GameBoy.vcxproj -> C:\Users\AdminUser.UserAdmin-PC\documents\visual studio 2015\Projects\GameBoy\Debug\GameBoy.pdb (Full PDB)
