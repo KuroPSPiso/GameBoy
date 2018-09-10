@@ -256,6 +256,14 @@ void PPU::PrintLine(uint8 row, BOOL printAll)
 
 		*/
 
+		ofstream vramfs("VRAM.txt", ofstream::out);
+		for (int i = 0; i < 0x2000; i++)
+		{
+			vramfs << _mmu->Read8(i + 0x8000);
+		}
+		vramfs.flush();
+		vramfs.close();
+
 		ofstream mapfs("tiles.txt", ofstream::out);
 
 

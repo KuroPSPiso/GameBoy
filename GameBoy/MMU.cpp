@@ -178,17 +178,17 @@ void MMU::Write8(uint16 address, uint8 value)
 	{
 		_VRAM[address - 0x8000] = value;
 
-		//update tile
-		uint16 base = address & 0x1FFE;
-		uint16 tile = (base >> 4) & 0x1FF;
-		uint16 y = (base >> 1) & 0x07;
+		////update tile
+		//uint16 base = address & 0x1FFE;
+		//uint16 tile = (base >> 4) & 0x1FF;
+		//uint16 y = (base >> 1) & 0x07;
 
-		uint16 sx;
-		for (uint8 x = 0; x < 0x08; x++)
-		{
-			sx = 1 << (7 - x);
-			_VRAM[(tile + y + x)] = ((_VRAM[address - 0x8000] & sx) ? 1 : 0) + ((_VRAM[address - 0x7FFF] & sx) ? 2 : 0);
-		}
+		//uint16 sx;
+		//for (uint8 x = 0; x < 0x08; x++)
+		//{
+		//	sx = 1 << (7 - x);
+		//	_VRAM[(tile + y + x)] = ((_VRAM[address - 0x8000] & sx) ? 1 : 0) + ((_VRAM[address - 0x7FFF] & sx) ? 2 : 0);
+		//}
 	}
 		break;
 	case 0x7000:
