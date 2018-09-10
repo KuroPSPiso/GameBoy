@@ -892,7 +892,7 @@ void CPU::Reset()
 	_registers.SP = 0;
 	_registers.PC = 0x0000;
 	
-	/*
+	
 	_registers.AF	(0x01B0);
 	_registers.F	= 0xB0;
 	_registers.BC	(0x0013);
@@ -932,7 +932,7 @@ void CPU::Reset()
 	Write8(WX, 0x00);
 	Write8(IE, 0x00);
 	_mmu->BIOSLoaded(TRUE);
-	Write8(STAT, 0x02);*/
+	Write8(STAT, 0x02);
 }
 
 uint16 CPU::GetCycles()

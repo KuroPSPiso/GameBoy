@@ -653,22 +653,20 @@ void PPU::ScanLine()
 			uint16 tileLocation = tileOffset; // +(16 * (tileNumber)); //+ (isUnsigned == TRUE) ? 0 : 128));
 			tileLocation += 16 * tileNumber;
 			
-			uint16 tileData = _mmu->Read16(tileLocation);
-			uint8 xIndex = tileRowRemainder;
-			uint8 yIndex = posY % 2;
+			BYTE line2 = posY % 8;
+			line2 *= 2; // each vertical line takes up two bytes of memory
+			BYTE data1 = _mmu->Read8(tileLocation + line2);
+			BYTE data2 = _mmu->Read8(tileLocation + line2 + 1);
 
-			uint8 colourBit = posX % 8;
+			int colourBit = posX % 8;
 			colourBit -= 7;
 			colourBit *= -1;
-			//end why?
 
-			uint8 tileUnMapped = _mmu->Read8(tileLocation + xIndex + yIndex);
-			//uint8 tileUnMapped1 = _mmu->Read8(tileLocation + xIndex + yIndex + 0);
-			uint8 pxColour = Get_Bit(tileUnMapped, colourBit);
-			pxColour <<= 1; //l-shift, set bit 1
-			pxColour |= Get_Bit(tileUnMapped, colourBit); //set bit 0
+			uint8 pxColour = Get_Bit(data2, colourBit);
+			pxColour <<= 1;
+			pxColour |= Get_Bit(data1, colourBit);
 
-			if (line < 0x00 || line >= 0x90 || pixel < 0 || pixel >= 0xA0)
+			if (line < 0x00 || line >= 0x90)
 			{
 				continue; //skip
 			}
