@@ -22,7 +22,7 @@ void update(int i, int& ref) {
 
 int main()
 {
-	cartridge = new Cartidge(gpu);
+	cartridge = new Cartidge(cpuTestPath2);
 	mmu = new MMU(cartridge);
 	cpu = new CPU(mmu);
 	ppu = new PPU(cpu, mmu);

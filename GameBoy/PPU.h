@@ -2,6 +2,7 @@
 #define PPU_H
 
 #include "Defines.h"
+#include "Sprite.h"
 #include "CPU.h"
 
 #define MODE0 0x00	//H-Blank
@@ -23,19 +24,13 @@ public:
 	PPU(CPU* cpu, MMU* mmu);
 	~PPU();
 
-
 	void PPU::Reset();
-
 	void PPU::ResetTileSet();
-
 	void PPU::UpdateTileSet();
-
 	void PPU::Print();
-
 	void PPU::PrintLine(uint8 row, BOOL printAll = FALSE);
-
 	void PPU::ScanLine();
-
+	Sprite * GetSprites(uint8 & lenght, uint8 x, uint8 y);
 	void PPU::Draw();
 };
 

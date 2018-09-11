@@ -892,7 +892,6 @@ void CPU::Reset()
 	_registers.SP = 0;
 	_registers.PC = 0x0000;
 	
-	
 	_registers.AF	(0x01B0);
 	_registers.F	= 0xB0;
 	_registers.BC	(0x0013);
@@ -933,6 +932,7 @@ void CPU::Reset()
 	Write8(IE, 0x00);
 	_mmu->BIOSLoaded(TRUE);
 	Write8(STAT, 0x02);
+	_mmu->BIOSLoaded(TRUE);
 }
 
 uint16 CPU::GetCycles()
@@ -946,23 +946,14 @@ uint16 CPU::ResetCycles()
 
 bool CPU::Run()
 {
-	//check if in BIOS
-	if (_registers.PC == 0x100)
-	{
-		_mmu->BIOSLoaded(TRUE);
-	}
-
 	if (_registers.PC == 0x0055)
 	{
 		int i = 0;
 	}
 
-	//(expected sequence)
 	BOOL runningState = TRUE;
 	uint8 val = Read8(_registers.PC);
 	uint16 pc = _registers.PC;
-	//printf("%s [0x%X] (0x%X)\n", opcodeNames[val] , pc, val);
-	//cout << opcodeNames[val];
 	_registers.PC += 0x0001;
 	if (val == 0xCB)
 	{
@@ -970,8 +961,6 @@ bool CPU::Run()
 		uint8 pc = Read8(_registers.PC);
 		_registers.PC += 0x0001;
 		(this->*(_cbOpcodeTable[pc]))();
-		_registers.tClock.byte_call_cycles + 1;
-		_registers.tClock.cpu_cycles + 4;
 	}
 	else
 	{
@@ -982,10 +971,6 @@ bool CPU::Run()
 	if (_hasSetPC == FALSE)
 	{
 		_registers.PC = pc;
-	}
-	else
-	{
-		//_registers.PC += _registers.tClock.byte_call_cycles - 1;
 	}
 
 	//reset

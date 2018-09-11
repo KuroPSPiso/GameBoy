@@ -47,6 +47,7 @@
 #define OBP1	0xFF49	//sprite colour palette 1
 #define WY		0xFF4A	//WNDPOSY
 #define WX		0xFF4B	//WNDPOSX
+#define ROMSTAT 0xFF50
 #define IE		0xFFFF
 
 #define V_BLANK	Get_Bit(Read8(IE), 0)
@@ -117,5 +118,6 @@ public:
 	void MMU::Write16(uint16 address, uint16 value);
 
 	void MMU::WriteInput(Input* inputRef, BOOL isDirectional);
+	void DMATransfer();
 };
 #endif // !MMU_H

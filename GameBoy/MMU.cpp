@@ -28,6 +28,11 @@ void MMU::Set_Bios()
 void MMU::BIOSLoaded(BOOL value)
 {
 	_IsInBios = (value == TRUE)? FALSE : TRUE;
+	
+	for (int i = 0x00; i < 0x2000; i++)
+	{
+		_VRAM[i] = 0x00;
+	}
 }
 
 MMU::MMU(Cartidge* cartridge)
@@ -159,6 +164,18 @@ void MMU::Write8(uint16 address, uint8 value)
 		else if (address < 0xFF4C && address >= 0xFF00)
 		{
 			_IO[address - 0xFF00] = value;
+
+			if (address == ROMSTAT)
+			{
+				BIOSLoaded((value == 0x01) ? TRUE : FALSE);
+			}
+			if (address == DMA)
+			{
+				if (value >= 0x00 && value <= 0xF1)
+				{
+					DMATransfer();
+				}
+			}
 		}
 		else if (address < 0xFEA0 && address >= 0xFE00)
 		{
@@ -233,4 +250,22 @@ void MMU::WriteInput(Input* inputRef, BOOL isDirectional)
 		Set_Bit(input, 5, Get_Bit(registeredInput, 1));
 	}
 	Write8(P1, input);
+}
+
+void MMU::DMATransfer()
+{
+	uint16 dma = Read8(DMA); //base address
+	dma <<= 8;
+
+	for (int dmaIndex = 0; dmaIndex < 0xA0; dmaIndex++)
+	{
+		//PUSH_AF();
+		//_registers.A = Read8(0x0000); //Base address
+		//Write8(DMA, _registers.A);
+		//_registers.A = 0x28;
+		//Sleep(160);
+		//POP_AF();
+
+		Write16(0xFE00 + dmaIndex, Read8(dma + dmaIndex));
+	}
 }

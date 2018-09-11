@@ -447,6 +447,7 @@ private:
 	void CB_SRL_H();	//0xCB3C
 	void CB_SRL_L();	//0xCB3D
 	void CB_SRL_MM();	//0xCB3E
+	void DMATransfer();
 	void CB_SRL_A();	//0xCB3F
 
 	void CB_BIT_0_B();	//0XCB40
