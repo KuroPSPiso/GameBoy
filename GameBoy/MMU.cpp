@@ -64,7 +64,7 @@ void MMU::Reset()
 	_WRAM = new uint8[0x2000]; // duplicates from 0xC000-0xDE00 to 0xE000-FDFF
 	_OAM = new uint8[0x00A0];
 	_IO = new uint8[0x004C];
-	_ZPRAM = new uint8[0x0079];
+	_ZPRAM = new uint8[0x0080];
 
 	for (uint16 address = 0x8000; address < 0xFFFF; address += 0x01)
 	{

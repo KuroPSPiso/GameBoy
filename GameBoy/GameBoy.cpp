@@ -11,6 +11,7 @@ PPU* ppu;
 int test = 0;
 
 char* t = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\t.gb";
+char* ttt = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\ttt.gb";
 char* cpuTestPath = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\cpu_instrs.gb";
 char* cpuTestPath2 = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\oam_bug.gb";
 char* rom = "C:\\Users\\AdminUser.UserAdmin-PC\\Documents\\Visual Studio 2015\\Projects\\GameBoy\\Debug\\roms\\rom.bin";
@@ -22,7 +23,7 @@ void update(int i, int& ref) {
 
 int main()
 {
-	cartridge = new Cartidge(cpuTestPath2);
+	cartridge = new Cartidge(gpu);
 	mmu = new MMU(cartridge);
 	cpu = new CPU(mmu);
 	ppu = new PPU(cpu, mmu);

@@ -75,7 +75,7 @@ CPU::~CPU()
 
 void CPU::Reset()
 {
-	for (uint8 i = 0; i < 0xFF; i++)
+	for (uint8 i = 0; i <= 0xFF; i++)
 	{
 		_opcodeTable[i] = &CPU::NOP;
 		_cbOpcodeTable[i] = &CPU::NOP;
@@ -891,7 +891,9 @@ void CPU::Reset()
 	_registers.L = 0;
 	_registers.SP = 0;
 	_registers.PC = 0x0000;
+	_registers.IME = TRUE;
 	
+	/*
 	_registers.AF	(0x01B0);
 	_registers.F	= 0xB0;
 	_registers.BC	(0x0013);
@@ -932,7 +934,7 @@ void CPU::Reset()
 	Write8(IE, 0x00);
 	_mmu->BIOSLoaded(TRUE);
 	Write8(STAT, 0x02);
-	_mmu->BIOSLoaded(TRUE);
+	_mmu->BIOSLoaded(TRUE);*/
 }
 
 uint16 CPU::GetCycles()
@@ -958,9 +960,9 @@ bool CPU::Run()
 	if (val == 0xCB)
 	{
 		//cb
-		uint8 pc = Read8(_registers.PC);
+		uint8 cbVal = Read8(_registers.PC);
 		_registers.PC += 0x0001;
-		(this->*(_cbOpcodeTable[pc]))();
+		(this->*(_cbOpcodeTable[cbVal]))();
 	}
 	else
 	{
@@ -981,6 +983,73 @@ bool CPU::Run()
 	_hasSetPC = FALSE;
 
 	if (input->IsExit()) { runningState = FALSE; }
+
+	uint8 IEData = Read8(IE);
+	uint8 IFData = Read8(IF);
+	if (Get_Bit(Read8(IE), 4) == TRUE || Read8(IE) == FALSE)
+	{
+		if (input->HasInput())
+		{
+			uint8 joyData = input->GetController();
+
+			joySwitch = (joySwitch == FALSE) ? TRUE : FALSE;
+			if (joySwitch)
+			{
+				//buttons
+				joyData >>= 4;
+				Set_Bit(joyData, 4, FALSE);
+				Set_Bit(joyData, 5, TRUE);
+			}
+			else
+			{
+				//arrows
+				joyData &= 0x0F;
+				Set_Bit(joyData, 4, TRUE);
+				Set_Bit(joyData, 5, FALSE);
+			}
+			Write8(P1, joyData);
+			Set_Bit(IEData, 4, TRUE);
+			Set_Bit(IFData, 4, TRUE);
+			Write8(IF, IFData);
+		}
+	}
+	/*
+	if (_registers.IME == TRUE)
+	{
+		for (uint8 interruptIndex = 0; interruptIndex <= 4; interruptIndex++)
+		{
+			if (Get_Bit(IEData, interruptIndex) == TRUE && Get_Bit(IFData, interruptIndex) == TRUE)
+			{
+				Set_Bit(IFData, interruptIndex, FALSE);
+				Write8(IF, IFData);
+				PUSH16_SP(_registers.PC);
+				_registers.IME = FALSE;
+				switch (interruptIndex)
+				{
+				case 0:
+					_registers.PC = 0x0040;
+					interruptIndex += 5;
+					break;
+				case 1:
+					_registers.PC = 0x0048;
+					interruptIndex += 5;
+					break;
+				case 2:
+					_registers.PC = 0x0050;
+					interruptIndex += 5;
+					break;
+				case 3:
+					_registers.PC = 0x0058;
+					interruptIndex += 5;
+					break;
+				case 4:
+					_registers.PC = 0x0060;
+					interruptIndex += 5;
+					break;
+				}
+			}
+		}
+	}*/
 	return runningState;
 }
 
@@ -2514,6 +2583,7 @@ void CPU::ADD_A_R()
 
 void CPU::RST_00H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0000;
 	_registers.tClock.Cycle(1, 16);
@@ -2582,6 +2652,7 @@ void CPU::ADC_A_R()
 
 void CPU::RST_08H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0008;
 	_registers.tClock.Cycle(1, 16);
@@ -2638,6 +2709,7 @@ void CPU::SUB_R()
 
 void CPU::RST_10H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0010;
 	_registers.tClock.Cycle(1, 16);
@@ -2690,6 +2762,7 @@ void CPU::SBC_A_R()
 
 void CPU::RST_18H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0018;
 	_registers.tClock.Cycle(1, 16);
@@ -2732,6 +2805,7 @@ void CPU::AND_R()
 
 void CPU::RST_20H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0020;
 	_registers.tClock.Cycle(1, 16);
@@ -2785,6 +2859,7 @@ void CPU::XOR_R()
 
 void CPU::RST_28H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0028;
 	_registers.tClock.Cycle(1, 16);
@@ -2812,7 +2887,7 @@ void CPU::LD_A_C2()
 void CPU::DI()
 {
 	//TODO: DI (not important now)
-	Write8(IE, FALSE);
+	_registers.IME = FALSE;
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2830,6 +2905,7 @@ void CPU::OR_R()
 
 void CPU::RST_30H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0030;
 	_registers.tClock.Cycle(1, 16);
@@ -2878,7 +2954,7 @@ void CPU::LD_A_RR()
 void CPU::EI()
 {
 	//TODO: SET INTERUPTS
-	Write8(IE, 0xFF);
+	_registers.IME = TRUE;
 	_registers.tClock.Cycle(1, 4);
 }
 
@@ -2890,6 +2966,7 @@ void CPU::CP_R()
 
 void CPU::RST_38H()
 {
+	DI();
 	PUSH16_SP(_registers.PC);
 	_registers.PC = 0x0038;
 	_registers.tClock.Cycle(1, 16);

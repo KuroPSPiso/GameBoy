@@ -61,6 +61,7 @@ class CPU
 		;
 
 		Clock tClock; //temporary clock
+		BOOL IME;
 	};
 
 private:
@@ -70,6 +71,8 @@ private:
 	BOOL _hasSetPC;
 	opcode _opcodeTable[0xFF];
 	opcode _cbOpcodeTable[0xFF];
+
+	BOOL joySwitch = FALSE;
 	
 public:
 	
