@@ -59,13 +59,11 @@ void CPU::math8(BOOL method, BOOL C, uint16 dataChange, uint8& dataRef, uint8& f
 	Set_Bit(_registers.F, 4, cCarried);
 }
 
-Input* input;
 char* opcodeNames[0xff];
 
 CPU::CPU(MMU* mmu)
 {
 	_mmu = mmu;
-	input = new Input();
 	Reset();
 }
 
@@ -980,7 +978,7 @@ bool CPU::Run()
 	_registers.tClock.Cycle(0, 0);
 	_hasSetPC = FALSE;
 
-	if (input->IsExit()) { runningState = FALSE; }
+	if (_mmu->ReadInput()->IsExit()) { runningState = FALSE; }
 	return runningState;
 }
 
@@ -1184,7 +1182,7 @@ void CPU::STOP()
 {
 	//TODO: HALT display/CPU
 	//TODO: WAIT FOR INPUT
-	while (input->HasInput() == FALSE);
+	while (_mmu->ReadInput()->HasInput() == FALSE);
 	_registers.tClock.Cycle(2, 4);
 }
 

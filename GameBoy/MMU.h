@@ -100,6 +100,7 @@ private:
 	uint8* _ZPRAM;	//Zero-Page (HIGH) RAM
 	uint8 _IFlag;	//Interupt Flag (IE)
 	Cartidge* _cartridge;
+	Input* _input;
 
 public:
 	MMU(Cartidge* cartridge);
@@ -117,7 +118,8 @@ public:
 	void MMU::Write8(uint16 address, uint8 value);
 	void MMU::Write16(uint16 address, uint16 value);
 
-	void MMU::WriteInput(Input* inputRef, BOOL isDirectional);
+	Input* MMU::ReadInput();
+	void MMU::WriteInput(BOOL isDirectional);
 	void DMATransfer();
 };
 #endif // !MMU_H

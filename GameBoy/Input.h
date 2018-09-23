@@ -10,6 +10,7 @@
 class Input
 {
 	uint8 _controller;
+	uint8 _keyRow;
 
 public:
 	Input();
@@ -18,7 +19,10 @@ public:
 	uint8 GetController();
 
 	int HasInput();
-	int IsExit();
+	BOOL IsExit();
+
+	uint8 Read8();
+	void Write8(uint8 value);
 };
 
 

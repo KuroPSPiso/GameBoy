@@ -65,6 +65,7 @@ void MMU::Reset()
 	_OAM = new uint8[0x00A0];
 	_IO = new uint8[0x004C];
 	_ZPRAM = new uint8[0x0079];
+	_input = new Input();
 
 	for (uint16 address = 0x8000; address < 0xFFFF; address += 0x01)
 	{
@@ -96,6 +97,10 @@ uint8 MMU::Read8(uint16 address)
 		else if (address < 0xFF4C && address >= 0xFF00)
 		{
 			result = _IO[address - 0xFF00];
+			if (address == P1)
+			{
+				result = _input->Read8();
+			}
 		}
 		else if (address < 0xFEA0 && address >= 0xFE00)
 		{
@@ -165,16 +170,18 @@ void MMU::Write8(uint16 address, uint8 value)
 		{
 			_IO[address - 0xFF00] = value;
 
-			if (address == ROMSTAT)
+			if (address == P1)
+			{
+				_input->Write8(value);
+			}
+			else if (address == ROMSTAT)
 			{
 				BIOSLoaded((value == 0x01) ? TRUE : FALSE);
 			}
-			if (address == DMA)
+			else if (address == DMA)
 			{
-				if (value >= 0x00 && value <= 0xF1)
-				{
-					DMATransfer();
-				}
+				_IO[DMA - 0xFF00] = value;
+				DMATransfer();
 			}
 		}
 		else if (address < 0xFEA0 && address >= 0xFE00)
@@ -227,18 +234,22 @@ void MMU::Write16(uint16 address, uint16 value)
 	Write8(address + 0x0001,	value >> 8);
 }
 
-void MMU::WriteInput(Input* inputRef, BOOL isDirectional)
+Input* MMU::ReadInput()
+{
+	return _input;
+}
+
+void MMU::WriteInput(BOOL isDirectional)
 {
 	uint8 input = 0x00;
-	uint8 registeredInput = inputRef->GetController();
+	uint8 registeredInput = _input->GetController();
 	if (isDirectional)
 	{
 		Set_Bit(input, 0, Get_Bit(registeredInput, 0));
 		Set_Bit(input, 1, Get_Bit(registeredInput, 1));
 		Set_Bit(input, 2, Get_Bit(registeredInput, 2));
 		Set_Bit(input, 3, Get_Bit(registeredInput, 3));
-		Set_Bit(input, 4, Get_Bit(registeredInput, 1));
-		Set_Bit(input, 5, Get_Bit(registeredInput, 0));
+		_input->Write8(0x10);
 	}
 	else
 	{
@@ -246,8 +257,7 @@ void MMU::WriteInput(Input* inputRef, BOOL isDirectional)
 		Set_Bit(input, 1, Get_Bit(registeredInput, 1 + 4));
 		Set_Bit(input, 2, Get_Bit(registeredInput, 2 + 4));
 		Set_Bit(input, 3, Get_Bit(registeredInput, 3 + 4));
-		Set_Bit(input, 4, Get_Bit(registeredInput, 0));
-		Set_Bit(input, 5, Get_Bit(registeredInput, 1));
+		_input->Write8(0x20);
 	}
 	Write8(P1, input);
 }
@@ -266,6 +276,6 @@ void MMU::DMATransfer()
 		//Sleep(160);
 		//POP_AF();
 
-		Write16(0xFE00 + dmaIndex, Read8(dma + dmaIndex));
+		Write8(0xFE00 + dmaIndex, Read8(dma + dmaIndex));
 	}
 }
